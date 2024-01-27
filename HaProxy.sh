@@ -94,7 +94,8 @@ is_ipv4() {
 
 add_ip() {
     # Check if at least one port is specified in both backend and frontend sections
-    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" /etc/haproxy/haproxy.cfg; then
+#    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" /etc/haproxy/haproxy.cfg; then
+if ! grep -qE '^ *bind \*:[0-9]+' /etc/haproxy/haproxy.cfg;
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
         return
     fi
