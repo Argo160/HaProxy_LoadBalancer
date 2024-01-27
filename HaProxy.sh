@@ -148,9 +148,9 @@ add_port() {
 sed -i '/frontend vpn_frontend/a\        bind *:'"$port"'' "$config_file"
 
                     echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
-                else
-                    echo "No 'mode tcp' directive found in the frontend section of $config_file"
-                fi
+               # else
+                #    echo "No 'mode tcp' directive found in the frontend section of $config_file"
+                #fi
 
         fi
 }
