@@ -30,10 +30,10 @@ install_haproxy() {
             # Check if the new configuration file exists
             if [ -f "/haproxy.cfg" ]; then
                 # Backup the original configuration file (optional)
-                cp "$original_config_file" "$original_config_file.bak"
+                cp "/etc/haproxy/haproxy.cfg" "/etc/haproxy/haproxy.cfg.bak"
 
                 # Replace the original configuration file with the new one
-                cp "$new_config_file" "$original_config_file"
+                cp "/haproxy.cfg" "/etc/haproxy/haproxy.cfg"
                echo "HAProxy configuration file replaced successfully."
             else
                 echo "New configuration file not found."
@@ -71,55 +71,11 @@ uninstall_haproxy() {
         echo "HAProxy is not installed."
     fi
 }
-
-is_frontend() {
-        # Path to the HAProxy configuration file
-        config_file="/etc/haproxy/haproxy.cfg"
-
-        # Check if "frontend" exists in the configuration file
-        if grep -q "frontend" "$config_file"; then
-                return 0 # Exists
-        else
-                # Define the frontend configuration
-                frontend_config="frontend ipv6_frontend\n    mode tcp\n    default_backend ipv6_backend\n\n"
-
-                # Append the frontend configuration to the HAProxy configuration file
-                echo -e "$frontend_config" | sudo tee -a "$config_file" > /dev/null
-
 #               # Verify the updated HAProxy configuration for any syntax errors
 #               haproxy -c -f "$config_file"
 
 #               # Reload HAProxy to apply the changes
 #               systemctl reload haproxy
-                return 0
-        fi
-}
-
-is_backend() {
-        # Path to the HAProxy configuration file
-        config_file="/etc/haproxy/haproxy.cfg"
-
-        # Check if "backend" exists in the configuration file
-        if grep -q "backend" "$config_file"; then
-                return 0 # Exists
-        else
-                # Path to the HAProxy configuration file
-                config_file="/etc/haproxy/haproxy.cfg"
-
-                # Define the backend configuration
-                backend_config="backend ipv6_backend\n    mode tcp\n    balance roundrobin\n\n"
-
-                # Append the backend configuration to the HAProxy configuration file
-                echo -e "$backend_config" | sudo tee -a "$config_file" > /dev/null
-
-#               # Verify the updated HAProxy configuration for any syntax errors
-#               haproxy -c -f "$config_file"
-
-#               # Reload HAProxy to apply the changes
-#               systemctl reload haproxy
-                return 0
-        fi
-}
 
 is_ipv4() {
     # Check if the given IP address is IPv4
@@ -174,7 +130,6 @@ remove_ip() {
 }
 
 add_port() {
-        is_frontend
     read -p "Enter the port to add: " port
         # Path to the HAProxy configuration file
         config_file="/etc/haproxy/haproxy.cfg"
@@ -187,7 +142,7 @@ add_port() {
                 # Path to the HAProxy configuration file
                 config_file="/etc/haproxy/haproxy.cfg"
 
-if grep -q "frontend ipv6_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
+if grep -q "frontend vpn_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
     # Insert "bind *:$port" after "mode tcp" in the frontend section
     sed -i '/frontend ipv6_frontend/,/default_backend ipv6_backend/ s/mode tcp/&\n'"    bind *:$port"'/' "$config_file"
                     echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
