@@ -107,8 +107,13 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         case $? in
         4)
             echo "Adding IPv4 address $ip_address to HAProxy configuration..."
-            # Add the IPv4 address to HAProxy configuration here
-            # Example: echo "server server_name $ip_address:port" >> "$config_file"
+            # Extract ports from the HAProxy configuration file
+            total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
+            for portt in $total_ports; do
+                # Assign the first port from the list to the current IP address
+                sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
+            done
+
             echo "IPv4 address $ip_address added successfully."
             ;;
         6)
@@ -120,7 +125,6 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
                 sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
             done
             # Add the IPv6 address to HAProxy configuration here
-            # Example: echo "server server_name [$ip_address]:port" >> /etc/haproxy/haproxy.cfg
             echo "IPv6 address [$ip_address] added successfully."
             ;;
         *)
