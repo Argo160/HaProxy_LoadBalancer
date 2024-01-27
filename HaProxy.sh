@@ -94,8 +94,9 @@ is_ipv4() {
 
 add_ip() {
     # Check if at least one port is specified in both backend and frontend sections
-#    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" /etc/haproxy/haproxy.cfg; then
-if ! grep -qE '^ *bind \*:[0-9]+' /etc/haproxy/haproxy.cfg; then
+    config_file="/etc/haproxy/haproxy.cfg"
+#    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" "$config_file"; then
+if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
         return
     fi
@@ -104,13 +105,13 @@ if ! grep -qE '^ *bind \*:[0-9]+' /etc/haproxy/haproxy.cfg; then
     if is_ipv4 "$ip_address"; then
         echo "Adding IPv4 address $ip_address to HAProxy configuration..."
         # Add the IPv4 address to HAProxy configuration here
-        # Example: echo "server server_name $ip_address:port" >> /etc/haproxy/haproxy.cfg
+        # Example: echo "server server_name $ip_address:port" >> "$config_file"
         echo "IPv4 address $ip_address added successfully."
     else
         echo "Adding IPv6 address $ip_address to HAProxy configuration..."
         # Extract ports from the HAProxy configuration file
-        total_ports=$(grep -E '^ *bind \*:([0-9]+)$' /path/to/your/haproxy.cfg | awk -F: '{print $2}')
-        for portt in "${total_ports[@]}"; do
+        total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
+        for portt in $total_ports; do
             # Assign the first port from the list to the current IP address
             sed -i '/option tcp-check/a\    server '"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
 
