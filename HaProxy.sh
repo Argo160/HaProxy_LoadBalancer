@@ -156,7 +156,7 @@ add_port() {
 #if grep -q "frontend vpn_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
     # Insert "bind *:$port" after "mode tcp" in the frontend section
  #   sed -i '/frontend vpn_frontend/,/default_backend vpn_backend/ s/mode tcp/&\n'"    bind *:$port"'/' "$config_file"
-sed -i '/frontend vpn_frontend/a\        bind *:'"$port"'' "$config_file"
+sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
 
                     echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
                # else
