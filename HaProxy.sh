@@ -107,7 +107,15 @@ add_ip() {
         echo "IPv4 address $ip_address added successfully."
     else
         echo "Adding IPv6 address $ip_address to HAProxy configuration..."
-        sed -i '/option tcp-check/a\    server server1 [2a01:4f8:171:1pq3::1]:443 check' "$config_file"
+        # Extract ports from the HAProxy configuration file
+        total_ports=$(grep -E '^ *bind \*:([0-9]+)$' /path/to/your/haproxy.cfg | awk -F: '{print $2}')
+        for portt in "${total_ports[@]}"; do
+            # Assign the first port from the list to the current IP address
+            sed -i '/option tcp-check/a\    server '"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
+
+
+        done
+
 
         
         # Add the IPv6 address to HAProxy configuration here
