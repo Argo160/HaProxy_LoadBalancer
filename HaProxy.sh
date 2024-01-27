@@ -96,19 +96,15 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
         return
     fi
-    # Extract IPv4 addresses
-    ipv4_addresses=$(grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' /path/to/your/haproxy.cfg)
-
-    # Extract IPv6 addresses
-    ipv6_addresses=$(grep -Eo '\[?[0-9a-fA-F:]+\]?' /path/to/your/haproxy.cfg)
-
+    # Extract unique IPv4 addresses
+    ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
+    # Extract unique IPv6 addresses
+    ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
     # Print the extracted addresses
-    echo "IPv4 addresses:"
+    echo "Current IPv4 addresses:"
     echo "$ipv4_addresses"
-
-    echo "IPv6 addresses:"
+    echo "Current IPv6 addresses:"
     echo "$ipv6_addresses"
-    
     read -p "Enter the IP address to add: " ip_address
     if grep -q "$ip_address" "$config_file"; then
         echo "The IP address $ip_to_check already exists in the configuration file."
