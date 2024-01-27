@@ -142,9 +142,11 @@ add_port() {
                 # Path to the HAProxy configuration file
                 config_file="/etc/haproxy/haproxy.cfg"
 
-if grep -q "frontend vpn_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
+#if grep -q "frontend vpn_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
     # Insert "bind *:$port" after "mode tcp" in the frontend section
-    sed -i '/frontend vpn_frontend/,/default_backend vpn_backend/ s/mode tcp/&\n'"    bind *:$port"'/' "$config_file"
+ #   sed -i '/frontend vpn_frontend/,/default_backend vpn_backend/ s/mode tcp/&\n'"    bind *:$port"'/' "$config_file"
+sed -i '/frontend vpn_frontend/a\        bind *:'"$port"'' "$config_file"
+
                     echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
                 else
                     echo "No 'mode tcp' directive found in the frontend section of $config_file"
@@ -165,15 +167,14 @@ remove_port() {
 while true; do
     echo "Menu:"
     echo "1 - Install HAProxy"
-    echo "2 - Uninstall HAProxy"
-    echo "3 - IP & Port Management"
-    echo "4 - Exit"
+#    echo "2 - Uninstall HAProxy"
+    echo "2 - IP & Port Management"
+    echo "3 - Exit"
     read -p "Enter your choice: " choice
 
     case $choice in
         1) install_haproxy;;
-        2) uninstall_haproxy;;
-        3) # IP Management menu
+        2) # IP Management menu
            while true; do
                echo "IP Management Menu:"
                echo "1 - Add IP"
@@ -192,7 +193,7 @@ while true; do
                    *) echo "Invalid choice. Please enter a valid option.";;
                esac
            done;;
-        4) echo "Exiting..."; exit;;
+        3) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
 done
