@@ -28,7 +28,7 @@ install_haproxy() {
         # Check installation status
         if [ $? -eq 0 ]; then
             # Check if the new configuration file exists
-            if [ -f "$new_config_file" ]; then
+            if [ -f "/haproxy.cfg" ]; then
                 # Backup the original configuration file (optional)
                 cp "$original_config_file" "$original_config_file.bak"
 
