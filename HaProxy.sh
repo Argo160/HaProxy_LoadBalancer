@@ -113,7 +113,7 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
         for portt in $total_ports; do
             # Assign the first port from the list to the current IP address
-            sed -i '/option tcp-check/a\    server '"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
+            sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
 
 
         done
