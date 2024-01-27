@@ -107,10 +107,10 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
     echo "$ipv6_addresses"
     read -p "Enter the IP address to add: " ip_address
     if grep -q "$ip_address" "$config_file"; then
-        echo "The IP address $ip_to_check already exists in the configuration file."
+        echo "The IP address $ip_address already exists in the configuration file."
     else
         # Call the function and pass the IP address
-        is_ipv4_or_ipv6 "192.168.1.1"
+        is_ipv4_or_ipv6 "$ip_address"
 
         # Check the return value
         case $? in
