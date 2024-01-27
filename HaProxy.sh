@@ -17,6 +17,7 @@ install_haproxy() {
         if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
             sudo apt-get install -y haproxy
+            apt install curl socat -y
         elif [ -x "$(command -v yum)" ]; then
             sudo yum install -y haproxy
         else
