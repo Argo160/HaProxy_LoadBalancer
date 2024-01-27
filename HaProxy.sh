@@ -77,18 +77,14 @@ uninstall_haproxy() {
 #               # Reload HAProxy to apply the changes
 #               systemctl reload haproxy
 
-is_ipv4() {
-    # Check if the given IP address is IPv4
+is_ipv4_or_ipv6() {
     local ip="$1"
     if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        return 0  # IPv4
+        return 4  # IPv4
+    elif [[ $ip =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
+        return 6  # IPv6
     else
-        # Check if the IP address is not empty
-        if [[ -n $ip ]]; then
-            # IPv6 addresses are formatted within square brackets
-            ip="[${ip}]"
-        fi
-        return 1  # Not IPv4
+        return 0  # Not IPv4 or IPv6
     fi
 }
 
@@ -104,13 +100,18 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
     if grep -q "$ip_address" "$config_file"; then
         echo "The IP address $ip_to_check already exists in the configuration file."
     else
-        # Check if the IP address is IPv4 or IPv6
-        if is_ipv4 "$ip_address"; then
+        # Call the function and pass the IP address
+        is_ipv4_or_ipv6 "192.168.1.1"
+
+        # Check the return value
+        case $? in
+        4)
             echo "Adding IPv4 address $ip_address to HAProxy configuration..."
             # Add the IPv4 address to HAProxy configuration here
             # Example: echo "server server_name $ip_address:port" >> "$config_file"
             echo "IPv4 address $ip_address added successfully."
-        else
+            ;;
+        6)
             echo "Adding IPv6 address $ip_address to HAProxy configuration..."
             # Extract ports from the HAProxy configuration file
             total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
@@ -121,7 +122,11 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             # Add the IPv6 address to HAProxy configuration here
             # Example: echo "server server_name [$ip_address]:port" >> /etc/haproxy/haproxy.cfg
             echo "IPv6 address [$ip_address] added successfully."
-        fi
+            ;;
+        *)
+            echo "Not an IPv4 or IPv6 address."
+            ;;
+        esac
     fi
 }
 
@@ -152,9 +157,10 @@ add_port() {
         else
             echo "Adding port $port to HAProxy configuration..."
             # Path to the HAProxy configuration file
-            config_file="/etc/haproxy/haproxy.cfg"
             sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
             echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
+
+        
         fi
 }
 
