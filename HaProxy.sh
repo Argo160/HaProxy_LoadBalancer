@@ -81,7 +81,7 @@ is_ipv4_or_ipv6() {
     local ip="$1"
     if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         return 4  # IPv4
-    elif [[ $ip =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
+    elif [[ $ip =~ ^\[?([0-9a-fA-F]{0,4}::?){1,7}([0-9a-fA-F]{0,4})?\]?$ ]]; then
         return 6  # IPv6
     else
         return 0  # Not IPv4 or IPv6
