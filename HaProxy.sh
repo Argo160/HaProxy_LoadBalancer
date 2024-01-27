@@ -172,9 +172,21 @@ add_port() {
             # Path to the HAProxy configuration file
             sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
             echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
-
-        
-        fi
+            # Extract unique IPv4 addresses
+            ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
+            if [ -n "$ipv4_addresses" ]; then
+                for ip in $ipv4_addresses; do
+                    sed -i '/option tcp-check/a\    server server_'"$ip$port"' '"$ip"':'"$port"' check' "$config_file"
+                done
+            fi
+            # Extract unique IPv6 addresses
+            ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
+            if [ -n "$ipv6_addresses" ]; then
+               for ip in $ipv6_addresses; do
+                   sed -i '/option tcp-check/a\    server server_'"$ip$port"' ['"$ip"']:'"$port"' check' "$config_file"
+               done
+            fi       
+     fi
 }
 
 remove_port() {
