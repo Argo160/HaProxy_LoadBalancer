@@ -170,7 +170,7 @@ add_port() {
         else
             echo "Adding port $port to HAProxy configuration..."
             # Path to the HAProxy configuration file
-            sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
+            sed -i '/frontend vpn_frontend/a\    bind *:'"$port"'' "$config_file"
             echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
             # Extract unique IPv4 addresses
             ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
