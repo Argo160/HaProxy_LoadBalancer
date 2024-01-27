@@ -101,28 +101,27 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         return
     fi
     read -p "Enter the IP address to add: " ip_address
-    # Check if the IP address is IPv4 or IPv6
-    if is_ipv4 "$ip_address"; then
-        echo "Adding IPv4 address $ip_address to HAProxy configuration..."
-        # Add the IPv4 address to HAProxy configuration here
-        # Example: echo "server server_name $ip_address:port" >> "$config_file"
-        echo "IPv4 address $ip_address added successfully."
+    if grep -q "$ip_address" "$config_file"; then
+        echo "The IP address $ip_to_check already exists in the configuration file."
     else
-        echo "Adding IPv6 address $ip_address to HAProxy configuration..."
-        # Extract ports from the HAProxy configuration file
-        total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
-        for portt in $total_ports; do
-            # Assign the first port from the list to the current IP address
-            sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
-
-
-        done
-
-
-        
-        # Add the IPv6 address to HAProxy configuration here
-        # Example: echo "server server_name [$ip_address]:port" >> /etc/haproxy/haproxy.cfg
-        echo "IPv6 address [$ip_address] added successfully."
+        # Check if the IP address is IPv4 or IPv6
+        if is_ipv4 "$ip_address"; then
+            echo "Adding IPv4 address $ip_address to HAProxy configuration..."
+            # Add the IPv4 address to HAProxy configuration here
+            # Example: echo "server server_name $ip_address:port" >> "$config_file"
+            echo "IPv4 address $ip_address added successfully."
+        else
+            echo "Adding IPv6 address $ip_address to HAProxy configuration..."
+            # Extract ports from the HAProxy configuration file
+            total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
+            for portt in $total_ports; do
+                # Assign the first port from the list to the current IP address
+                sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
+            done
+            # Add the IPv6 address to HAProxy configuration here
+            # Example: echo "server server_name [$ip_address]:port" >> /etc/haproxy/haproxy.cfg
+            echo "IPv6 address [$ip_address] added successfully."
+        fi
     fi
 }
 
@@ -152,19 +151,10 @@ add_port() {
             echo "Port $port is already configured in the frontend section of $config_file"
         else
             echo "Adding port $port to HAProxy configuration..."
-                # Path to the HAProxy configuration file
-                config_file="/etc/haproxy/haproxy.cfg"
-
-#if grep -q "frontend vpn_frontend" "$config_file" && grep -q "mode tcp" "$config_file"; then
-    # Insert "bind *:$port" after "mode tcp" in the frontend section
- #   sed -i '/frontend vpn_frontend/,/default_backend vpn_backend/ s/mode tcp/&\n'"    bind *:$port"'/' "$config_file"
-sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
-
-                    echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
-               # else
-                #    echo "No 'mode tcp' directive found in the frontend section of $config_file"
-                #fi
-
+            # Path to the HAProxy configuration file
+            config_file="/etc/haproxy/haproxy.cfg"
+            sed -i '/frontend vpn_frontend/a\   bind *:'"$port"'' "$config_file"
+            echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
         fi
 }
 
