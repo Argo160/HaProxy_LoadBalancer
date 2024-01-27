@@ -27,6 +27,18 @@ install_haproxy() {
 
         # Check installation status
         if [ $? -eq 0 ]; then
+            # Check if the new configuration file exists
+            if [ -f "$new_config_file" ]; then
+                # Backup the original configuration file (optional)
+                cp "$original_config_file" "$original_config_file.bak"
+
+                # Replace the original configuration file with the new one
+                cp "$new_config_file" "$original_config_file"
+               echo "HAProxy configuration file replaced successfully."
+            else
+                echo "New configuration file not found."
+                exit 1
+            fi            
             echo "HAProxy installed successfully."
         else
             echo "Failed to install HAProxy."
