@@ -195,6 +195,7 @@ add_port() {
             echo "Adding port $port to HAProxy configuration..."
             # Path to the HAProxy configuration file
             sed -i '/frontend vpn_frontend/a\    bind *:'"$port"'' "$config_file"
+            systemctl restart haproxy
             #echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
             if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
                 # Extract unique IPv4 addresses
@@ -272,7 +273,7 @@ done
 proxy_protocol() {
     clear
     config_file="/etc/haproxy/haproxy.cfg"
-    if ! grep -qE '^ *server .* check$' "$config_file"; then
+    if ! grep -qE '^\s*server ' "$config_file"; then
         echo "Atleast one ip address is required in configuration file"
     else
         if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
