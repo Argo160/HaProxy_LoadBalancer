@@ -239,13 +239,29 @@ done
 proxy_protocol() {
     clear
     config_file="/etc/haproxy/haproxy.cfg"
-    if grep -E '^\s*bind\s+\*:[0-9]+\s+accept-proxy\s*$' "$config_file" >/dev/null; then
-        echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
-        read -p "Do you want to Disable it? (y/n): " pp
-    else
-        echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
-        read -p "Do you want to Enable it? (y/n): " pp    
-    fi
+#    if ! grep -qE '^ *server .* check$' "$config_file"; then
+#        echo "Atleast one ip address is required in configuration file"
+#    else
+#        if grep -E '^\s*bind\s+\*:[0-9]+\s+accept-proxy\s*$' "$config_file" >/dev/null; then
+#            echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
+#            read -p "Do you want to Disable it? (y/n): " pp
+#            # Convert input to lowercase
+#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+#            # Check if the input is "y"
+#            if [ "$pp_lowercase" = "y" ]; then
+#                # Tasks to be performed if input is "y"
+#            fi
+#        else
+#            echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
+#            read -p "Do you want to Enable it? (y/n): " pp    
+#            # Convert input to lowercase
+#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+#            # Check if the input is "y"
+#            if [ "$pp_lowercase" = "y" ]; then
+#                # Tasks to be performed if input is "y"
+#            fi
+#        fi
+#    fi
 }
 # Main menu
 while true; do
