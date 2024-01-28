@@ -122,7 +122,7 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
                 # Assign the first port from the list to the current IP address
                 sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
             done
-
+            systemctl restart haproxy
             echo "IPv4 address $ip_address added successfully."
             ;;
         6)
@@ -135,6 +135,7 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             done
             # Add the IPv6 address to HAProxy configuration here
             echo "IPv6 address [$ip_address] added successfully."
+            systemctl restart haproxy
             ;;
         *)
             echo "Not an IPv4 or IPv6 address."
@@ -180,6 +181,7 @@ add_port() {
                 for ip in $ipv4_addresses; do
                     sed -i '/option tcp-check/a\    server server_'"$ip$port"' '"$ip"':'"$port"' check' "$config_file"
                 done
+                systemctl restart haproxy
             fi
             # Extract unique IPv6 addresses
             ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
@@ -187,6 +189,7 @@ add_port() {
                for ip in $ipv6_addresses; do
                    sed -i '/option tcp-check/a\    server server_'"$ip$port"' ['"$ip"']:'"$port"' check' "$config_file"
                done
+               systemctl restart haproxy
             fi       
      fi
 }
@@ -198,14 +201,25 @@ remove_port() {
     # Example: sed -i "/bind \*: $port$/d" /etc/haproxy/haproxy.cfg
     echo "Port $port removed successfully."
 }
+health_check() {
+server_info=$(echo "show stat" | socat stdio /run/haproxy/admin.sock | awk -F',' '/^vpn_backend,/ && !/BACKEND/{print $2,$18}')
 
+# Checking each server's status
+echo "$server_info" | while read -r server_ip status; do
+    if [[ "$status" == "UP" ]]; then
+        echo -e "\e[32mServer at $server_ip is up.\e[0m"  # Green color for UP
+    else
+        echo -e "\e[31mServer at $server_ip is down.\e[0m"  # Red color for DOWN
+    fi
+done
+}
 # Main menu
 while true; do
     echo "Menu:"
     echo "1 - Install HAProxy"
-#    echo "2 - Uninstall HAProxy"
     echo "2 - IP & Port Management"
-    echo "3 - Exit"
+    echo "3 - Health Check"     
+    echo "4 - Exit"
     read -p "Enter your choice: " choice
 
     case $choice in
@@ -229,7 +243,8 @@ while true; do
                    *) echo "Invalid choice. Please enter a valid option.";;
                esac
            done;;
-        3) echo "Exiting..."; exit;;
+        3) health_check;;
+        4) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
 done
