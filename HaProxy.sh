@@ -102,9 +102,9 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
     ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
     # Print the extracted addresses
     echo "Current IPv4 addresses:"
-    echo "$ipv4_addresses"
+    echo -e "\e[33m$ipv4_addresses\e[0m"
     echo "Current IPv6 addresses:"
-    echo "$ipv6_addresses"
+    echo -e "\e[33m$ipv6_addresses\e[0m"
     read -p "Enter the IP address to add: " ip_address
     if grep -q "$ip_address" "$config_file"; then
         echo "The IP address $ip_address already exists in the configuration file."
@@ -164,7 +164,7 @@ add_port() {
     config_file="/etc/haproxy/haproxy.cfg"
     current_ports=$(awk '/^frontend vpn_frontend/{flag=1; next} /^default_backend/{flag=0} flag && /bind \*:/{print $2}' "$config_file" | cut -d ':' -f 2)
     echo "Current Ports:"
-    echo "$current_ports"
+    echo -e "\e[33m$current_ports\e[0m"
 
     read -p "Enter the port to add: " port
         # Check if the port exists in the frontend section of the configuration file
