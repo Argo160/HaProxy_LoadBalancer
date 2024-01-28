@@ -27,18 +27,13 @@ install_haproxy() {
 
         # Check installation status
         if [ $? -eq 0 ]; then
-            # Check if the new configuration file exists
-            if [ -f "/haproxy.cfg" ]; then
                 # Backup the original configuration file (optional)
                 cp "/etc/haproxy/haproxy.cfg" "/etc/haproxy/haproxy.cfg.bak"
 
                 # Replace the original configuration file with the new one
-                cp "/haproxy.cfg" "/etc/haproxy/haproxy.cfg"
+                # Download the haproxy.cfg from GitHub and overwrite the original file
+                wget -O /etc/haproxy/haproxy.cfg https://raw.githubusercontent.com/Argo160/HaProxy_LoadBalancer/main/haproxy.cfg
                echo "HAProxy configuration file replaced successfully."
-            else
-                echo "New configuration file not found."
-                exit 1
-            fi            
             echo "HAProxy installed successfully."
         else
             echo "Failed to install HAProxy."
