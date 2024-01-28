@@ -272,31 +272,31 @@ done
 proxy_protocol() {
     clear
     config_file="/etc/haproxy/haproxy.cfg"
-#    if ! grep -qE '^ *server .* check$' "$config_file"; then
-#        echo "Atleast one ip address is required in configuration file"
-#    else
-#        if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
-#            echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
-#            read -p "Do you want to Disable it? (y/n): " pp
-#            # Convert input to lowercase
-#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
-#            # Check if the input is "y"
-#            if [ "$pp_lowercase" = "y" ]; then
-#                # Tasks to be performed if input is "y"
-#                sed -i 's/send-proxy-v2//g' "$config_file"
-#            fi
-#        else
-#            echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
-#            read -p "Do you want to Enable it? (y/n): " pp    
-#            # Convert input to lowercase
-#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
-#            # Check if the input is "y"
-#            if [ "$pp_lowercase" = "y" ]; then
-#                # Tasks to be performed if input is "y"
-#                sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
-#            fi
-#        fi
-#    fi
+    if ! grep -qE '^ *server .* check$' "$config_file"; then
+        echo "Atleast one ip address is required in configuration file"
+    else
+        if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
+            echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
+            read -p "Do you want to Disable it? (y/n): " pp
+            # Convert input to lowercase
+            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+            # Check if the input is "y"
+            if [ "$pp_lowercase" = "y" ]; then
+                # Tasks to be performed if input is "y"
+                sed -i 's/send-proxy-v2//g' "$config_file"
+            fi
+        else
+            echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
+            read -p "Do you want to Enable it? (y/n): " pp    
+            # Convert input to lowercase
+            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+            # Check if the input is "y"
+            if [ "$pp_lowercase" = "y" ]; then
+                # Tasks to be performed if input is "y"
+                sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
+            fi
+        fi
+    fi
 }
 # Main menu
 while true; do
@@ -304,7 +304,7 @@ while true; do
     echo "1 - Install HAProxy"
     echo "2 - IP & Port Management"
     echo "3 - Health Check"     
-#    echo "4 - Proxy Protocol"
+    echo "4 - Proxy Protocol"
     echo "5 - Exit"
     read -p "Enter your choice: " choice
 
@@ -330,7 +330,7 @@ while true; do
                esac
            done;;
         3) health_check;;
-#        4) proxy_protocol;;
+        4) proxy_protocol;;
         5) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
