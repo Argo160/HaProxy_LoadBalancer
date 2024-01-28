@@ -87,7 +87,7 @@ add_ip() {
     # Check if at least one port is specified in both backend and frontend sections
     config_file="/etc/haproxy/haproxy.cfg"
 #    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" "$config_file"; then
-if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
+    if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
         return
     fi
@@ -114,10 +114,17 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             echo "Adding IPv4 address $ip_address to HAProxy configuration..."
             # Extract ports from the HAProxy configuration file
             total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
-            for portt in $total_ports; do
-                # Assign the first port from the list to the current IP address
-                sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
-            done
+            if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
+                for portt in $total_ports; do
+                    # Assign the first port from the list to the current IP address
+                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check send-proxy-v2' "$config_file"
+                done
+            else
+                for portt in $total_ports; do
+                    # Assign the first port from the list to the current IP address
+                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
+                done
+            fi
             systemctl restart haproxy
             echo "IPv4 address $ip_address added successfully."
             ;;
@@ -125,10 +132,17 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             echo "Adding IPv6 address $ip_address to HAProxy configuration..."
             # Extract ports from the HAProxy configuration file
             total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
-            for portt in $total_ports; do
-                # Assign the first port from the list to the current IP address
-                sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
-            done
+            if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
+                for portt in $total_ports; do
+                    # Assign the first port from the list to the current IP address
+                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check send-proxy-v2' "$config_file"
+                done
+            else
+                for portt in $total_ports; do
+                    # Assign the first port from the list to the current IP address
+                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
+                done
+            fi
             # Add the IPv6 address to HAProxy configuration here
             echo "IPv6 address [$ip_address] added successfully."
             systemctl restart haproxy
@@ -181,23 +195,42 @@ add_port() {
             echo "Adding port $port to HAProxy configuration..."
             # Path to the HAProxy configuration file
             sed -i '/frontend vpn_frontend/a\    bind *:'"$port"'' "$config_file"
-            echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
-            # Extract unique IPv4 addresses
-            ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
-            if [ -n "$ipv4_addresses" ]; then
-                for ip in $ipv4_addresses; do
-                    sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' '"$ip"':'"$port"' check' "$config_file"
-                done
-                systemctl restart haproxy
+            #echo "Added 'bind *:$port' after 'mode tcp' in the frontend section of $config_file"
+            if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
+                # Extract unique IPv4 addresses
+                ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
+                if [ -n "$ipv4_addresses" ]; then
+                    for ip in $ipv4_addresses; do
+                        sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' '"$ip"':'"$port"' check send-proxy-v2' "$config_file"
+                    done
+                    systemctl restart haproxy
+                fi
+                # Extract unique IPv6 addresses
+                ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
+                if [ -n "$ipv6_addresses" ]; then
+                   for ip in $ipv6_addresses; do
+                       sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' ['"$ip"']:'"$port"' check send-proxy-v2' "$config_file"
+                   done
+                   systemctl restart haproxy
+                fi       
+            else
+                # Extract unique IPv4 addresses
+                ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
+                if [ -n "$ipv4_addresses" ]; then
+                    for ip in $ipv4_addresses; do
+                        sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' '"$ip"':'"$port"' check' "$config_file"
+                    done
+                    systemctl restart haproxy
+                fi
+                # Extract unique IPv6 addresses
+                ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
+                if [ -n "$ipv6_addresses" ]; then
+                   for ip in $ipv6_addresses; do
+                       sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' ['"$ip"']:'"$port"' check' "$config_file"
+                   done
+                   systemctl restart haproxy
+                fi       
             fi
-            # Extract unique IPv6 addresses
-            ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
-            if [ -n "$ipv6_addresses" ]; then
-               for ip in $ipv6_addresses; do
-                   sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' ['"$ip"']:'"$port"' check' "$config_file"
-               done
-               systemctl restart haproxy
-            fi       
      fi
 }
 
