@@ -236,13 +236,25 @@ echo "$server_info" | while read -r server_ip status; do
     fi
 done
 }
+proxy_protocol() {
+    clear
+    config_file="/etc/haproxy/haproxy.cfg"
+    if grep -E '^\s*bind\s+\*:[0-9]+\s+accept-proxy\s*$' "$config_file" >/dev/null; then
+        echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
+        read -p "Do you want to Disable it? (y/n): " pp
+    else
+        echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
+        read -p "Do you want to Enable it? (y/n): " pp    
+    fi
+}
 # Main menu
 while true; do
     echo "Menu:"
     echo "1 - Install HAProxy"
     echo "2 - IP & Port Management"
     echo "3 - Health Check"     
-    echo "4 - Exit"
+    echo "4 - Proxy Protocol"
+    echo "5 - Exit"
     read -p "Enter your choice: " choice
 
     case $choice in
@@ -267,7 +279,8 @@ while true; do
                esac
            done;;
         3) health_check;;
-        4) echo "Exiting..."; exit;;
+        4) proxy_protocol;;
+        5) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
 done
