@@ -160,10 +160,12 @@ remove_ip() {
 }
 
 add_port() {
-    read -p "Enter the port to add: " port
-        # Path to the HAProxy configuration file
-        config_file="/etc/haproxy/haproxy.cfg"
+    config_file="/etc/haproxy/haproxy.cfg"
+    current_ports=$(awk '/^frontend vpn_frontend/{flag=1; next} /^default_backend/{flag=0} flag && /bind \*:/{print $2}' "$config_file" | cut -d ':' -f 2)
+    echo "Current Ports:"
+    echo "$current_ports"
 
+    read -p "Enter the port to add: " port
         # Check if the port exists in the frontend section of the configuration file
         if grep -q "bind.*:$port\b" "$config_file"; then
             echo "Port $port is already configured in the frontend section of $config_file"
