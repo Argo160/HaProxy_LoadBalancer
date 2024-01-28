@@ -284,6 +284,7 @@ proxy_protocol() {
             if [ "$pp_lowercase" = "y" ]; then
                 # Tasks to be performed if input is "y"
                 sed -i 's/send-proxy-v2//g' "$config_file"
+                systemctl restart haproxy
             fi
         else
             echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
@@ -294,6 +295,7 @@ proxy_protocol() {
             if [ "$pp_lowercase" = "y" ]; then
                 # Tasks to be performed if input is "y"
                 sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
+                systemctl restart haproxy
             fi
         fi
     fi
