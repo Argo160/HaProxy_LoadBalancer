@@ -101,9 +101,10 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
     # Extract unique IPv6 addresses
     ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
     # Print the extracted addresses
-    echo "Current IPv4 addresses:"
+    clear
+    echo -e "\e[1mCurrent IPv4 addresses:\e[0m"
     echo -e "\e[33m$ipv4_addresses\e[0m"
-    echo "Current IPv6 addresses:"
+    echo -e "\e[1mCurrent IPv6 addresses:\e[0m"
     echo -e "\e[33m$ipv6_addresses\e[0m"
     read -p "Enter the IP address to add: " ip_address
     if grep -q "$ip_address" "$config_file"; then
@@ -163,7 +164,8 @@ remove_ip() {
 add_port() {
     config_file="/etc/haproxy/haproxy.cfg"
     current_ports=$(awk '/^frontend vpn_frontend/{flag=1; next} /^default_backend/{flag=0} flag && /bind \*:/{print $2}' "$config_file" | cut -d ':' -f 2)
-    echo "Current Ports:"
+    clear
+    echo -e "\e[1mCurrent Ports::\e[0m"
     echo -e "\e[33m$current_ports\e[0m"
 
     read -p "Enter the port to add: " port
