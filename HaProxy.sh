@@ -120,7 +120,7 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
             for portt in $total_ports; do
                 # Assign the first port from the list to the current IP address
-                sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
+                sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
             done
             systemctl restart haproxy
             echo "IPv4 address $ip_address added successfully."
@@ -131,7 +131,7 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
             total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
             for portt in $total_ports; do
                 # Assign the first port from the list to the current IP address
-                sed -i '/option tcp-check/a\    server server_'"$ip_address$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
+                sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
             done
             # Add the IPv6 address to HAProxy configuration here
             echo "IPv6 address [$ip_address] added successfully."
@@ -179,7 +179,7 @@ add_port() {
             ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
             if [ -n "$ipv4_addresses" ]; then
                 for ip in $ipv4_addresses; do
-                    sed -i '/option tcp-check/a\    server server_'"$ip$port"' '"$ip"':'"$port"' check' "$config_file"
+                    sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' '"$ip"':'"$port"' check' "$config_file"
                 done
                 systemctl restart haproxy
             fi
@@ -187,7 +187,7 @@ add_port() {
             ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
             if [ -n "$ipv6_addresses" ]; then
                for ip in $ipv6_addresses; do
-                   sed -i '/option tcp-check/a\    server server_'"$ip$port"' ['"$ip"']:'"$port"' check' "$config_file"
+                   sed -i '/option tcp-check/a\    server server_'"$ip"'-'"$port"' ['"$ip"']:'"$port"' check' "$config_file"
                done
                systemctl restart haproxy
             fi       
