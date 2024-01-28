@@ -271,7 +271,7 @@ while true; do
     echo "1 - Install HAProxy"
     echo "2 - IP & Port Management"
     echo "3 - Health Check"     
-    echo "4 - Proxy Protocol"
+#    echo "4 - Proxy Protocol"
     echo "5 - Exit"
     read -p "Enter your choice: " choice
 
@@ -297,7 +297,7 @@ while true; do
                esac
            done;;
         3) health_check;;
-        4) proxy_protocol;;
+#        4) proxy_protocol;;
         5) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
