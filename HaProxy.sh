@@ -203,27 +203,21 @@ remove_port() {
     echo -e "\e[1mCurrent Ports::\e[0m"
     echo -e "\e[33m$current_ports\e[0m"
 
-    read -p "Enter the port to add: " port
+    read -p "Enter the port to remove: " port
         # Check if the port exists in the frontend section of the configuration file
         if grep -q "bind.*:$port\b" "$config_file"; then
             echo "Port $port is being deleted from HAProxy configuration..."
             # Define the port to be deleted
             port_to_delete="$port"
             # Update frontend configuration
-            sed -i "/^ *bind .*:$port_to_delete$/d" haproxy.cfg
+            sed -i "/^ *bind .*:$port_to_delete$/d" "$config_file"
             # Update backend configuration
-            sed -i "/^ *server .*:$port_to_delete/d" haproxy.cfg
+            sed -i "/^ *server .*:$port_to_delete/d" "$config_file"
             systemctl restart haproxy
+            echo "Port $port removed successfully."
         else
             echo "The port $port Does not Exists in HAProxy configuration..."
         fi
-
-
-    read -p "Enter the port to remove: " port
-    echo "Removing port $port from HAProxy configuration..."
-    # Remove the port from HAProxy configuration here
-    # Example: sed -i "/bind \*: $port$/d" /etc/haproxy/haproxy.cfg
-    echo "Port $port removed successfully."
 }
 health_check() {
 server_info=$(echo "show stat" | socat stdio /run/haproxy/admin.sock | awk -F',' '/^vpn_backend,/ && !/BACKEND/{print $2,$18}')
