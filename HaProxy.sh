@@ -146,18 +146,28 @@ if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
 }
 
 remove_ip() {
-    read -p "Enter the IP address to remove: " ip_address
-    # Check if the IP address is IPv4 or IPv6
-    if is_ipv4 "$ip_address"; then
-        echo "Removing IPv4 address $ip_address from HAProxy configuration..."
-        # Remove the IPv4 address from HAProxy configuration here
-        # Example: sed -i "/$ip_address/d" /etc/haproxy/haproxy.cfg
+    config_file="/etc/haproxy/haproxy.cfg"
+    # Extract unique IPv4 addresses
+    ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
+    # Extract unique IPv6 addresses
+    ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
+    # Print the extracted addresses
+    clear
+    echo -e "\e[1mCurrent IPv4 addresses:\e[0m"
+    echo -e "\e[33m$ipv4_addresses\e[0m"
+    echo -e "\e[1mCurrent IPv6 addresses:\e[0m"
+    echo -e "\e[33m$ipv6_addresses\e[0m"
+    read -p "Enter the IP address to be removed: " ip_address
+    if grep -q "$ip_address" "$config_file"; then
+        echo "The IP address $ip_address is being removed from the configuration file."
+        ip_to_delete="$ip_address"
+
+        # Update backend configuration
+        sed -i "/^ *server .*${ip_to_delete}\]:/d" "$config_file"
+        systemctl restart haproxy
         echo "IPv4 address $ip_address removed successfully."
-    else
-        echo "Removing IPv6 address $ip_address from HAProxy configuration..."
-        # Remove the IPv6 address from HAProxy configuration here
-        # Example: sed -i "/\[$ip_address\]/d" /etc/haproxy/haproxy.cfg
-        echo "IPv6 address [$ip_address] removed successfully."
+     else
+        echo "The IP address $ip_address Does not Exists in HAProxy configuration..."
     fi
 }
 
