@@ -86,72 +86,67 @@ is_ipv4_or_ipv6() {
 add_ip() {
     # Check if at least one port is specified in both backend and frontend sections
     config_file="/etc/haproxy/haproxy.cfg"
-#    if ! grep -qE "^\s*server\s+\w+\s+\d+\.\d+\.\d+\.\d+:[0-9]+\s*$" "$config_file"; then
-    if ! grep -qE '^ *bind \*:[0-9]+' "$config_file"; then
+    # Check if the configuration file exists
+    if [ ! -f "$config_file" ]; then
+        echo "Error: HAProxy configuration file not found: $config_file"
+        exit 1
+    fi
+    # Extract frontend port numbers from the configuration file
+    frontend_ports=$(grep -E "^\s*frontend\s+port[0-9]+" "$config_file" | awk '{print $2}')
+    # Check if any frontend ports are defined
+    if [ -z "$frontend_ports" ]; then
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
-        return
-    fi
-    # Extract unique IPv4 addresses
-    ipv4_addresses=$(grep -Eo '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' "$config_file" | sort -u)
-    # Extract unique IPv6 addresses
-    ipv6_addresses=$(grep -E 'server.*\[[^]]+\]' "$config_file" | awk -F'[][]' '{print $2}' | sort | uniq)
-    # Print the extracted addresses
-    clear
-    echo -e "\e[1mCurrent IPv4 addresses:\e[0m"
-    echo -e "\e[33m$ipv4_addresses\e[0m"
-    echo -e "\e[1mCurrent IPv6 addresses:\e[0m"
-    echo -e "\e[33m$ipv6_addresses\e[0m"
-    read -p "Enter the IP address to add: " ip_address
-    if grep -q "$ip_address" "$config_file"; then
-        echo "The IP address $ip_address already exists in the configuration file."
     else
-        # Call the function and pass the IP address
-        is_ipv4_or_ipv6 "$ip_address"
-
-        # Check the return value
-        case $? in
-        4)
-            echo "Adding IPv4 address $ip_address to HAProxy configuration..."
-            # Extract ports from the HAProxy configuration file
-            total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
-            if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
-                for portt in $total_ports; do
-                    # Assign the first port from the list to the current IP address
-                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check send-proxy-v2' "$config_file"
-                done
-            else
-                for portt in $total_ports; do
-                    # Assign the first port from the list to the current IP address
-                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' '"$ip_address"':'"$portt"' check' "$config_file"
-                done
-            fi
-            systemctl restart haproxy
-            echo "IPv4 address $ip_address added successfully."
-            ;;
-        6)
-            echo "Adding IPv6 address $ip_address to HAProxy configuration..."
-            # Extract ports from the HAProxy configuration file
-            total_ports=$(grep -E '^ *bind \*:([0-9]+)$' "$config_file" | awk -F: '{print $2}')
-            if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
-                for portt in $total_ports; do
-                    # Assign the first port from the list to the current IP address
-                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check send-proxy-v2' "$config_file"
-                done
-            else
-                for portt in $total_ports; do
-                    # Assign the first port from the list to the current IP address
-                    sed -i '/option tcp-check/a\    server server_'"$ip_address"'-'"$portt"' ['"$ip_address"']:'"$portt"' check' "$config_file"
-                done
-            fi
-            # Add the IPv6 address to HAProxy configuration here
-            echo "IPv6 address [$ip_address] added successfully."
-            systemctl restart haproxy
-            ;;
-        *)
-            echo "Not an IPv4 or IPv6 address."
-            ;;
-        esac
+        echo "Frontend ports defined in the configuration file:"
+        echo "$frontend_ports"
+        read
     fi
+
+    # Extract backend IP addresses from the configuration file
+    backend_ips=$(grep -Eo '\b([0-9]+\.){3}[0-9]+|([0-9a-fA-F]+:){2,7}[0-9a-fA-F]+\b' "$config_file" | sort -u)
+
+    # Check if any backend IPs are defined
+    clear
+    if [ -z "$backend_ips" ]; then
+        echo "No IPs defined in the configuration file yet."else
+        echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
+        echo "$backend_ips"
+    fi
+
+    # Prompt the user for the new IP address
+    read -p "Enter the new IP address: " new_ip
+
+    # Check if the entered IP address is valid
+    if [[ $new_ip =~ ^[0-9.]+$ ]]; then
+        # IPv4 address
+        ip_format="%s"
+    elif [[ $new_ip =~ ^[0-9a-fA-F:.]+$ ]]; then
+        # IPv6 address
+        ip_format="[%s]"
+    else
+        echo "Error: Invalid IP address format."
+        exit 1
+    fi
+
+    # Extract backend names from the configuration file
+    backend_names=$(awk '/^\s*backend\s+/{print $2}' "$config_file")
+
+    #check if backend is empty or not
+    if [ -z "$backend_names" ]; then
+        for port in $frontend_ports; do
+            backend_name="backend$port"
+            echo "backend $backend_name" >> "$config_file"
+            echo "    balance roundrobin" >> "$config_file"
+            echo "    server server1 $ip_format:$port check" >> "$config_file"
+        done
+    else
+        # Add the new IP address to the backend sections after the line containing "balance roundrobin"
+        for backend_name in $backend_names; do
+            echo "Adding $new_ip to backend $backend_name"
+            sed -i "/^\s*backend\s\+$backend_name\s*$/,/balance roundrobin/ s/\(balance roundrobin\)/\1\n    server server1 $(printf "$ip_format" "$new_ip"):${backe>
+        done
+    fi
+    echo "New IP address added to the HAProxy configuration file."
 }
 
 remove_ip() {
