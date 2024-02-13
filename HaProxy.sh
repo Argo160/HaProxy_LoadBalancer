@@ -143,7 +143,7 @@ add_ip() {
         # Add the new IP address to the backend sections after the line containing "balance roundrobin"
         for backend_name in $backend_names; do
             echo "Adding $new_ip to backend $backend_name"
-            sed -i "/^\s*backend\s\+$backend_name\s*$/,/balance roundrobin/ s/\(balance roundrobin\)/\1\n    server server1 $(printf "$ip_format" "$new_ip"):${backe>
+            sed -i "/^\s*backend\s\+$backend_name\s*$/,/balance roundrobin/ s/\(balance roundrobin\)/\1\n    server server1 $(printf "$ip_format" "$new_ip"):${backend_name#backend} check/" "$config_file"
         done
     fi
     echo "New IP address added to the HAProxy configuration file."
