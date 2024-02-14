@@ -1,5 +1,4 @@
 #!/bin/bash
-
 check_haproxy_availability() {
     if command -v haproxy &>/dev/null; then
         return 0  # HAProxy is installed
@@ -7,9 +6,8 @@ check_haproxy_availability() {
         return 1  # HAProxy is not installed
     fi
 }
-
 install_haproxy() {
-clear
+    clear
     if check_haproxy_availability; then
         echo "HAProxy is already installed."
         echo "Press any key to return to the menu"
@@ -27,60 +25,54 @@ clear
             echo "Unsupported package manager. Cannot install HAProxy."
             exit 1
         fi
-
         # Check installation status
         if [ $? -eq 0 ]; then
-                # Backup the original configuration file (optional)
-                cp "/etc/haproxy/haproxy.cfg" "/etc/haproxy/haproxy.cfg.bak"
-
-                # Replace the original configuration file with the new one
-                # Download the haproxy.cfg from GitHub and overwrite the original file
-                wget -O /etc/haproxy/haproxy.cfg https://raw.githubusercontent.com/Argo160/HaProxy_LoadBalancer/main/haproxy.cfg
-               echo "HAProxy configuration file replaced successfully."
+            # Backup the original configuration file (optional)
+            cp "/etc/haproxy/haproxy.cfg" "/etc/haproxy/haproxy.cfg.bak"
+            # Replace the original configuration file with the new one
+            # Download the haproxy.cfg from GitHub and overwrite the original file
+            wget -O /etc/haproxy/haproxy.cfg https://raw.githubusercontent.com/Argo160/HaProxy_LoadBalancer/main/haproxy.cfg
+            echo "HAProxy configuration file replaced successfully."
             echo "HAProxy installed successfully."
-           echo "Press any key to return to the menu"
-           read
+            echo "Press enter to return to the menu"
+            read
         else
             echo "Failed to install HAProxy."
             exit 1
         fi
     fi
 }
-
 uninstall_haproxy() {
     if check_haproxy_availability; then
-clear
-# Prompt the user for confirmation with default value 'n'
-read -p "Are you sure to uninstall the loadBalancer? (y/n) [n]: " -r answer
-
-# Use default value if user input is empty
-answer=${answer:-n}
-
-# Check the user's response
-if [[ $answer == [Yy] ]]; then
-        # Uninstall HAProxy
-        echo "Uninstalling HAProxy..."
-        if [ -x "$(command -v apt-get)" ]; then
-            sudo apt-get remove --purge -y haproxy
-        elif [ -x "$(command -v yum)" ]; then
-            sudo yum remove -y haproxy
+        clear
+        # Prompt the user for confirmation with default value 'n'
+        read -p "Are you sure to uninstall the loadBalancer? (y/n) [n]: " -r answer
+        # Use default value if user input is empty
+        answer=${answer:-n}
+        # Check the user's response
+        if [[ $answer == [Yy] ]]; then
+            # Uninstall HAProxy
+            echo "Uninstalling HAProxy..."
+            if [ -x "$(command -v apt-get)" ]; then
+                sudo apt-get remove --purge -y haproxy
+            elif [ -x "$(command -v yum)" ]; then
+                sudo yum remove -y haproxy
+            else
+                echo "Unsupported package manager. Cannot uninstall HAProxy."
+                exit 1
+            fi
+            # Check uninstallation status
+            if [ $? -eq 0 ]; then
+                echo "HAProxy uninstalled successfully."
+            else
+                echo "Failed to uninstall HAProxy."
+                exit 1
+            fi
+            # Add commands to uninstall the loadBalancer here
         else
-            echo "Unsupported package manager. Cannot uninstall HAProxy."
-            exit 1
+            echo "Operation canceled. LoadBalancer will not be uninstalled."
+            return
         fi
-
-        # Check uninstallation status
-        if [ $? -eq 0 ]; then
-            echo "HAProxy uninstalled successfully."
-        else
-            echo "Failed to uninstall HAProxy."
-            exit 1
-        fi
-    # Add commands to uninstall the loadBalancer here
-else
-    echo "Operation canceled. LoadBalancer will not be uninstalled."
-        return
-fi
     else
         echo "HAProxy is not installed."
     fi
@@ -96,7 +88,7 @@ is_ipv4_or_ipv6() {
     fi
 }
 add_ip() {
-clear
+    clear
     # Check if at least one port is specified in both backend and frontend sections
     config_file="/etc/haproxy/haproxy.cfg"
     # Check if the configuration file exists
@@ -111,10 +103,8 @@ clear
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
         return
     fi
-
     # Extract backend IP addresses from the configuration file
      backend_ips=$(grep -Eo '\b([0-9]+\.){3}[0-9]+|([0-9a-fA-F]+:){2,7}[0-9a-fA-F]+(::1)?\b' "$config_file" | sort -u)
-
     # Check if any backend IPs are defined
     clear
     if [ -z "$backend_ips" ]; then
@@ -123,10 +113,8 @@ clear
         echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
         echo -e "\e[1m\e[33m$backend_ips\e[0m"
     fi
-
     # Prompt the user for the new IP address
     read -p "Enter the new IP address: " new_ip
-
     # Check if the entered IP address is valid
     if [[ $new_ip =~ ^[0-9.]+$ ]]; then
         # IPv4 address
@@ -138,7 +126,6 @@ clear
         echo "Error: Invalid IP address format."
         exit 1
     fi
-
     # Extract backend names from the configuration file
     backend_names=$(awk '/^\s*backend\s+/{print $2}' "$config_file")
     #check if backend is empty or not
@@ -152,24 +139,23 @@ clear
         done
         systemctl restart haproxy
     else
-
-if grep -qE "(^| )($new_ip:|\[$new_ip\]|$new_ip)( |$|\]|:)" "$config_file"; then
-    echo "IP $new_ip is already present in the configuration file."
-        return
-else
-# Add the new IP address to the backend sections after the line containing "balance roundrobin"
-for backend_name in $backend_names; do
- sed -i "/^\s*backend\s\+$backend_name\s*$/,/balance roundrobin/ s/\(balance roundrobin\)/\1\n    server server"$new_ip" $(printf "$ip_format" "$new_ip"):${backend_name#backend} check/" "$config_file"
- done
-    fi
-    echo "New IP address added to the HAProxy configuration file."
+        if grep -qE "(^| )($new_ip:|\[$new_ip\]|$new_ip)( |$|\]|:)" "$config_file"; then
+            echo "IP $new_ip is already present in the configuration file."
+            return
+        else
+            # Add the new IP address to the backend sections after the line containing "balance roundrobin"
+            for backend_name in $backend_names; do
+                sed -i "/^\s*backend\s\+$backend_name\s*$/,/balance roundrobin/ s/\(balance roundrobin\)/\1\n    server server"$new_ip" $(printf "$ip_format" "$new_ip"):${backend_name#backend} check/" "$config_file"
+             done
+        fi
+        echo "New IP address added to the HAProxy configuration file."
         systemctl restart haproxy
-fi
+    fi
 }
 remove_ip() {
     config_file="/etc/haproxy/haproxy.cfg"
-     backend_ips=$(grep -Eo '\b([0-9]+\.){3}[0-9]+|([0-9a-fA-F]+:){2,7}[0-9a-fA-F]+(::1)?\b' "$config_file" | sort -u)
-     num_ips=$(echo "$backend_ips" | wc -l)
+    backend_ips=$(grep -Eo '\b([0-9]+\.){3}[0-9]+|([0-9a-fA-F]+:){2,7}[0-9a-fA-F]+(::1)?\b' "$config_file" | sort -u)
+    num_ips=$(echo "$backend_ips" | wc -l)
     # Check if any backend IPs are defined
     clear
     if [ -z "$backend_ips" ]; then
@@ -180,30 +166,27 @@ remove_ip() {
         echo -e "\e[1m\e[33m$backend_ips\e[0m"
     fi
     read -p "Enter IP address to delete: " old_ip
-
-#check if there are more than 1 unique ip and the one is already there
-if grep -qE "(^| )($old_ip:|\[$old_ip\]|$old_ip)( |$|\]|:)" "$config_file"; then
-    if [ "$num_ips" -gt 1 ]; then
-        # Delete only the given IP from the backends
-        sed -i "/server.*$old_ip.*check/d" "$config_file"
-        echo "Deleted IP $old_ip from the backends."
-        systemctl restart haproxy
-    elif [ "$num_ips" -eq 1 ]; then
-        # Delete the entire backend
-
-last_default_backend_line=$(grep -n "default_backend" "$config_file" | tail -n1 | cut -d: -f1)
-   sed -i "${last_default_backend_line}q" "$config_file"
-#sed -i "${last_default_backend_line},$ d" "$config_file"
-        echo "Deleted the entire backend where IP $old_ip was the only one."
-        systemctl restart haproxy
+    #check if there are more than 1 unique ip and the one is already there
+    if grep -qE "(^| )($old_ip:|\[$old_ip\]|$old_ip)( |$|\]|:)" "$config_file"; then
+        if [ "$num_ips" -gt 1 ]; then
+            # Delete only the given IP from the backends
+            sed -i "/server.*$old_ip.*check/d" "$config_file"
+            echo "Deleted IP $old_ip from the backends."
+            systemctl restart haproxy
+        elif [ "$num_ips" -eq 1 ]; then
+            # Delete the entire backend
+            last_default_backend_line=$(grep -n "default_backend" "$config_file" | tail -n1 | cut -d: -f1)
+            sed -i "${last_default_backend_line}q" "$config_file"
+            #sed -i "${last_default_backend_line},$ d" "$config_file"
+            echo "Deleted the entire backend where IP $old_ip was the only one."
+            systemctl restart haproxy
+        fi
+    else
+        echo "IP $old_ip is not present in the configuration file."
     fi
-else
-    echo "IP $old_ip is not present in the configuration file."
-fi
 }
-
 add_port() {
-clear
+    clear
     # Check if at least one port is specified in both backend and frontend sections
     config_file="/etc/haproxy/haproxy.cfg"
     # Check if the configuration file exists
@@ -240,7 +223,6 @@ clear
         sed -i "${last_default_backend_line} a\\
 ${new_frontend_config}" "$config_file"
         echo "Successfully added the new frontend configuration for port ${port_to_add}."
-
         # Extract backend IP addresses from the configuration file
         backend_ips=$(grep -Eo '\b([0-9]+\.){3}[0-9]+|([0-9a-fA-F]+:){2,7}[0-9a-fA-F]+(::1)?\b' "$config_file" | sort -u)
 
@@ -251,7 +233,6 @@ ${new_frontend_config}" "$config_file"
         else
                 echo "backend backend$port_to_add" >> "$config_file"
                 echo "    balance roundrobin" >> "$config_file"
-
                 for ip in $backend_ips; do
                         # Check if the entered IP address is valid
                         if [[ $ip =~ ^[0-9.]+$ ]]; then
@@ -267,12 +248,11 @@ ${new_frontend_config}" "$config_file"
                 echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
                 echo -e "\e[1m\e[33m$backend_ips\e[0m"
         fi
- fi
+    fi
 }
-
 remove_port() {
-clear
- config_file="/etc/haproxy/haproxy.cfg"
+    clear
+    config_file="/etc/haproxy/haproxy.cfg"
     # Extract frontend port numbers from the configuration file
     frontend_ports=$(grep -E "^\s*frontend\s+port[0-9]+" "$config_file" | awk '{print $2}')
     # Check if any frontend ports are defined
@@ -284,40 +264,39 @@ clear
         echo -e "\e[33m$frontend_ports\e[0m"
         read -p "Enter the port to delete: " port_to_delete
         existing_frontend=$(grep -E "frontend port${port_to_delete}\\b" "$config_file")
-       if [ -n "$existing_frontend" ]; then
-         # Delete the frontend configuration for the given port
-         sed -i "/^frontend port${port_to_delete}/,+2 d" "$config_file"
-sed -i "/^backend backend${port_to_delete}$/,/^backend/ {/^backend backend${port_to_delete}$/b; /^backend/!d}" "$config_file"
-sed -i "/^backend backend${port_to_delete}$/d" "$config_file"
-         echo "Successfully deleted for port ${port_to_delete}."
-                systemctl restart haproxy
-
-       else
-         echo "Frontend configuration for port ${port_to_delete} does not exist."
-       fi
+        if [ -n "$existing_frontend" ]; then
+            # Delete the frontend configuration for the given port
+            sed -i "/^frontend port${port_to_delete}/,+2 d" "$config_file"
+            sed -i "/^backend backend${port_to_delete}$/,/^backend/ {/^backend backend${port_to_delete}$/b; /^backend/!d}" "$config_file"
+            sed -i "/^backend backend${port_to_delete}$/d" "$config_file"
+            echo "Successfully deleted for port ${port_to_delete}."
+            systemctl restart haproxy
+        else
+            echo "Frontend configuration for port ${port_to_delete} does not exist."
+        fi
     fi
 }
 health_check() {
-clear
+    clear
     config_file="/etc/haproxy/haproxy.cfg"
     # Extract backend names from the configuration file
     backend_names=$(awk '/^\s*backend\s+/{print $2}' "$config_file")
-for backend_name in $backend_names; do
-server_info=$(echo "show stat" | socat stdio /run/haproxy/admin.sock | awk -F',' "/^$backend_name,/ && !/BACKEND/{print \$74,\$18}")
-echo "$server_info" | while read -r server_ip status; do
-    if [[ "$status" == "UP" ]]; then
-        echo -e "\e[32mServer at $server_ip is up.\e[0m"  # Green color for UP
-    else
-        echo -e "\e[31mServer at $server_ip is down.\e[0m"  # Red color for DOWN
-    fi
-done
-done
-read
+    for backend_name in $backend_names; do
+        server_info=$(echo "show stat" | socat stdio /run/haproxy/admin.sock | awk -F',' "/^$backend_name,/ && !/BACKEND/{print \$74,\$18}")
+        echo "$server_info" | while read -r server_ip status; do
+            if [[ "$status" == "UP" ]]; then
+                echo -e "\e[32mServer at $server_ip is up.\e[0m"  # Green color for UP
+            else
+                echo -e "\e[31mServer at $server_ip is down.\e[0m"  # Red color for DOWN
+            fi
+        done
+    done
+    echo "Press Enter to return to main Menu"    
+    read
 }
 proxy_protocol() {
     clear
-echo "Coming Soon"
-
+    echo "Coming Soon"
 #    config_file="/etc/haproxy/haproxy.cfg"
 #    if ! grep -qE '^\s*server ' "$config_file"; then
 #        echo "Atleast one ip address is required in configuration file"
@@ -382,7 +361,6 @@ clear
     echo "7 - Uninstall"
     echo "0 - Exit"
     read -p "Enter your choice: " choice
-
     case $choice in
         1) install_haproxy;;
         2) # IP Management menu
@@ -394,7 +372,6 @@ clear
                echo "    4 - Remove Port"
                echo "    9 - Back to Main Menu"
                read -p "Enter your choice: " ip_choice
-
                case $ip_choice in
                    1) add_ip;;
                    2) remove_ip;;
@@ -420,8 +397,6 @@ clear
                    *) echo "Invalid choice. Please enter a valid option.";;
                esac
            done;;
-
-
         6) Reset_Config;;
         7) uninstall_haproxy;;
         0) echo "Exiting..."; exit;;
