@@ -296,35 +296,34 @@ health_check() {
 }
 proxy_protocol() {
     clear
-    echo "Coming Soon"
-#    config_file="/etc/haproxy/haproxy.cfg"
-#    if ! grep -qE '^\s*server ' "$config_file"; then
-#        echo "Atleast one ip address is required in configuration file"
-#    else
-#        if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
-#            echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
-#            read -p "Do you want to Disable it? (y/n): " pp
-#            # Convert input to lowercase
-#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
-#            # Check if the input is "y"
-#            if [ "$pp_lowercase" = "y" ]; then
-#                # Tasks to be performed if input is "y"
-#                sed -i 's/send-proxy-v2//g' "$config_file"
-#                systemctl restart haproxy
-#            fi
-#        else
-#            echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
-#            read -p "Do you want to Enable it? (y/n): " pp
-#            # Convert input to lowercase
-#            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
-#            # Check if the input is "y"
-#            if [ "$pp_lowercase" = "y" ]; then
-#                # Tasks to be performed if input is "y"
-#                sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
-#                systemctl restart haproxy
-#            fi
-#        fi
-#    fi
+    config_file="/etc/haproxy/haproxy.cfg"
+    if ! grep -qE '^\s*server ' "$config_file"; then
+        echo "Atleast one ip address is required in configuration file"
+    else
+        if grep -qE '^\s*server .* check send-proxy-v2$' "$config_file"; then
+            echo -e "\e[32mProxy Protocol is Enabled.\e[0m"  # Green color for Enabled
+            read -p "Do you want to Disable it? (y/n): " pp
+            # Convert input to lowercase
+            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+            # Check if the input is "y"
+            if [ "$pp_lowercase" = "y" ]; then
+                # Tasks to be performed if input is "y"
+                sed -i 's/send-proxy-v2//g' "$config_file"
+                systemctl restart haproxy
+            fi
+        else
+            echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
+            read -p "Do you want to Enable it? (y/n): " pp
+            # Convert input to lowercase
+            pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+            # Check if the input is "y"
+            if [ "$pp_lowercase" = "y" ]; then
+                # Tasks to be performed if input is "y"
+                sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
+                systemctl restart haproxy
+            fi
+        fi
+    fi
 }
 create_backup() {
     config_file="/etc/haproxy/haproxy.cfg"
