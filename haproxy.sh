@@ -347,6 +347,63 @@ Reset_Config() {
         echo -e "\e[32mThe Setting Restored to default\e[0m"
         echo "You need to specify ports and ip addresses"
 }
+balance_algo() {
+    clear
+    config_file="/etc/haproxy/haproxy.cfg"
+    backend_names=$(awk '/^\s*backend\s+/{print $2}' "$config_file")
+    # Function to extract the balance algorithm for a given backend
+    get_balance_algorithm() {
+         local backend_name="$1"
+    grep -A 2 -E "backend $backend_name$" "$config_file" | grep -oE "balance\s+\w+" | awk '{print $2}'
+    }
+    # Function to check if the balance algorithm is roundrobin
+    is_roundrobin() {
+        local algorithm="$1"
+    [[ "$algorithm" == "roundrobin" ]]
+    }
+    # Function to check if the balance algorithm is leastconn
+    is_leastconn() {
+        local algorithm="$1"
+        [[ "$algorithm" == "leastconn" ]]
+    }
+    # Main script
+    first_backend=$(grep -m 1 -E "^backend " "$config_file" | awk '{print $2}')
+    balance_algorithm=$(get_balance_algorithm "$first_backend")
+    if is_roundrobin "$balance_algorithm"; then
+        echo -e "\e[32mCurrent Balance Algorithm is: ROUNDROBIN\e[0m"
+        read -p "Do you want to change it to Leastconn? (y/n): " pp
+        # Convert input to lowercase
+        pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+        # Check if the input is "y"
+        if [ "$pp_lowercase" = "y" ]; then
+            # Tasks to be performed if input is "y"
+            for backend_name in $backend_names; do
+                sed -i "/^backend $backend_name$/,/^$/ s/^    balance .*/    balance leastconn/" "$config_file"
+            done
+            systemctl restart haproxy
+            echo -e "\e[32mChanged successfuly\e[0m"
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
+        fi
+    elif is_leastconn "$balance_algorithm"; then
+        echo -e "\e[32mCurrent Balance Algorithm is: LEASTCONN\e[0m"
+        read -p "Do you want to change it to Roundrobin? (y/n): " pp
+        # Convert input to lowercase
+        pp_lowercase=$(echo "$pp" | tr '[:upper:]' '[:lower:]')
+        # Check if the input is "y"
+        if [ "$pp_lowercase" = "y" ]; then
+            for backend_name in $backend_names; do
+                sed -i "/^backend $backend_name$/,/^$/ s/^    balance .*/    balance roundrobin/" "$config_file"
+            done
+            systemctl restart haproxy
+            echo -e "\e[32mChanged successfuly\e[0m"
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
+        fi
+    else
+        echo "No Balance Algorithm Found"
+    fi
+}
 # Main menu
 while true; do
 clear
@@ -355,9 +412,10 @@ clear
     echo "2 - IP & Port Management"
     echo "3 - Health Check"
     echo "4 - Proxy Protocol"
-    echo "5 - Backup"
-    echo "6 - Reset Config"
-    echo "7 - Uninstall"
+    echo "5 - Balance Algorithm"
+    echo "6 - Backup"
+    echo "7 - Reset Config"
+    echo "8 - Uninstall"
     echo "0 - Exit"
     read -p "Enter your choice: " choice
     case $choice in
@@ -382,7 +440,8 @@ clear
            done;;
         3) health_check;;
         4) proxy_protocol;;
-        5) # Backup
+        5) balance_algo;;
+        6) # Backup
            while true; do
                echo "    Backup Management Menu:"
                echo "    1 - Create Backup"
@@ -396,8 +455,8 @@ clear
                    *) echo "Invalid choice. Please enter a valid option.";;
                esac
            done;;
-        6) Reset_Config;;
-        7) uninstall_haproxy;;
+        7) Reset_Config;;
+        8) uninstall_haproxy;;
         0) echo "Exiting..."; exit;;
         *) echo "Invalid choice. Please enter a valid option.";;
     esac
