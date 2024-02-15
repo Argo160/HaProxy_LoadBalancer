@@ -464,6 +464,7 @@ clear
         1) install_haproxy;;
         2) # IP Management menu
            while true; do
+               clear
                echo "    IP Management Menu:"
                echo "    1 - Add IP"
                echo "    2 - Remove IP"
@@ -485,6 +486,7 @@ clear
         5) balance_algo;;
         6) # Backup
            while true; do
+               clear
                echo "    Backup Management Menu:"
                echo "    1 - Create Backup"
                echo "    2 - Restore Backup"
