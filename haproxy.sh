@@ -127,7 +127,7 @@ add_ip() {
         echo "Error: Invalid IP address format."
         read -n 1 -s -r -p "Press any key to continue"
         echo
-        exit 1
+        return
     fi
     # Extract backend names from the configuration file
     backend_names=$(awk '/^\s*backend\s+/{print $2}' "$config_file")
