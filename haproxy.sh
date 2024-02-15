@@ -10,8 +10,8 @@ install_haproxy() {
     clear
     if check_haproxy_availability; then
         echo "HAProxy is already installed."
-        echo "Press any key to return to the menu"
-        read
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
     else
         # Install HAProxy
         echo "Installing HAProxy..."
@@ -34,8 +34,8 @@ install_haproxy() {
             wget -O /etc/haproxy/haproxy.cfg https://raw.githubusercontent.com/Argo160/HaProxy_LoadBalancer/main/haproxy.cfg
             echo "HAProxy configuration file replaced successfully."
             echo "HAProxy installed successfully."
-            echo "Press enter to return to the menu"
-            read
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
         else
             echo "Failed to install HAProxy."
             exit 1
@@ -64,6 +64,8 @@ uninstall_haproxy() {
             # Check uninstallation status
             if [ $? -eq 0 ]; then
                 echo "HAProxy uninstalled successfully."
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
             else
                 echo "Failed to uninstall HAProxy."
                 exit 1
@@ -71,20 +73,13 @@ uninstall_haproxy() {
             # Add commands to uninstall the loadBalancer here
         else
             echo "Operation canceled. LoadBalancer will not be uninstalled."
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
             return
         fi
     else
         echo "HAProxy is not installed."
-    fi
-}
-is_ipv4_or_ipv6() {
-    local ip="$1"
-    if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        return 4  # IPv4
-    elif [[ $ip =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ ]]; then
-        return 6  # IPv6
-    else
-        return 0  # Not IPv4 or IPv6
+        exit 1
     fi
 }
 add_ip() {
@@ -94,6 +89,8 @@ add_ip() {
     # Check if the configuration file exists
     if [ ! -f "$config_file" ]; then
         echo "Error: HAProxy configuration file not found: $config_file"
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         exit 1
     fi
     # Extract frontend port numbers from the configuration file
@@ -101,6 +98,8 @@ add_ip() {
     # Check if any frontend ports are defined
     if [ -z "$frontend_ports" ]; then
         echo "Please specify at least one port in the HAProxy configuration file before adding IP addresses."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         return
     fi
     # Extract backend IP addresses from the configuration file
@@ -109,6 +108,8 @@ add_ip() {
     clear
     if [ -z "$backend_ips" ]; then
         echo "No IPs defined in the configuration file yet."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
     else
         echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
         echo -e "\e[1m\e[33m$backend_ips\e[0m"
@@ -124,6 +125,8 @@ add_ip() {
         ip_format="[%s]"
     else
         echo "Error: Invalid IP address format."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         exit 1
     fi
     # Extract backend names from the configuration file
@@ -141,6 +144,8 @@ add_ip() {
     else
         if grep -qE "(^| )($new_ip:|\[$new_ip\]|$new_ip)( |$|\]|:)" "$config_file"; then
             echo "IP $new_ip is already present in the configuration file."
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
             return
         else
             # Add the new IP address to the backend sections after the line containing "balance roundrobin"
@@ -150,6 +155,8 @@ add_ip() {
         fi
         echo "New IP address added to the HAProxy configuration file."
         systemctl restart haproxy
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
     fi
 }
 remove_ip() {
@@ -160,6 +167,8 @@ remove_ip() {
     clear
     if [ -z "$backend_ips" ]; then
         echo "No IPs defined in the configuration file yet."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         return
     else
         echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
@@ -173,6 +182,8 @@ remove_ip() {
             sed -i "/server.*$old_ip.*check/d" "$config_file"
             echo "Deleted IP $old_ip from the backends."
             systemctl restart haproxy
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
         elif [ "$num_ips" -eq 1 ]; then
             # Delete the entire backend
             last_default_backend_line=$(grep -n "default_backend" "$config_file" | tail -n1 | cut -d: -f1)
@@ -180,9 +191,13 @@ remove_ip() {
             #sed -i "${last_default_backend_line},$ d" "$config_file"
             echo "Deleted the entire backend where IP $old_ip was the only one."
             systemctl restart haproxy
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
         fi
     else
         echo "IP $old_ip is not present in the configuration file."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
     fi
 }
 add_port() {
@@ -192,6 +207,8 @@ add_port() {
     # Check if the configuration file exists
     if [ ! -f "$config_file" ]; then
         echo "Error: HAProxy configuration file not found: $config_file"
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         exit 1
     fi
     # Extract frontend port numbers from the configuration file
@@ -206,12 +223,16 @@ add_port() {
         # Append the snippet to the end of the file
         echo "$config_snippet" >> "$config_file"
         echo "Successfully added the configuration snippet for port ${port_to_add}."
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
     else
         echo -e "\e[1mCurrent Ports::\e[0m"
         echo -e "\e[33m$frontend_ports\e[0m"
         read -p "Enter the port to add: " port_to_add
         if [ -n "$(grep -E "frontend port${port_to_add}\\b" "$config_file")" ]; then
                 echo "The Port is already available"
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
                 return
         fi
         # Find the last line containing "default_backend"
@@ -230,6 +251,8 @@ ${new_frontend_config}" "$config_file"
         clear
         if [ -z "$backend_ips" ]; then
                 echo "No IPs defined in the configuration file yet."
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
         else
                 echo "backend backend$port_to_add" >> "$config_file"
                 echo "    balance roundrobin" >> "$config_file"
@@ -245,8 +268,9 @@ ${new_frontend_config}" "$config_file"
                         echo "    server server"$ip" $(printf "$ip_format" "$ip"):$port_to_add check" >> "$config_file"
                 done
                 systemctl restart haproxy
-                echo -e "\e[1mThe current IPs defined in the configuration file:\e[0m"
-                echo -e "\e[1m\e[33m$backend_ips\e[0m"
+                echo "Successfully added the backend(s) configuration for port ${port_to_add}."
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
         fi
     fi
 }
@@ -258,6 +282,8 @@ remove_port() {
     # Check if any frontend ports are defined
     if [ -z "$frontend_ports" ]; then
         echo "No ports defined to delete"
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
         return
     else
         echo -e "\e[1mCurrent Ports::\e[0m"
@@ -271,8 +297,12 @@ remove_port() {
             sed -i "/^backend backend${port_to_delete}$/d" "$config_file"
             echo "Successfully deleted for port ${port_to_delete}."
             systemctl restart haproxy
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
         else
             echo "Frontend configuration for port ${port_to_delete} does not exist."
+            read -n 1 -s -r -p "Press any key to continue"
+            echo
         fi
     fi
 }
@@ -291,8 +321,8 @@ health_check() {
             fi
         done
     done
-    echo "Press Enter to return to main Menu"    
-    read
+    read -n 1 -s -r -p "Press any key to continue"
+    echo
 }
 proxy_protocol() {
     clear
@@ -310,6 +340,9 @@ proxy_protocol() {
                 # Tasks to be performed if input is "y"
                 sed -i 's/send-proxy-v2//g' "$config_file"
                 systemctl restart haproxy
+                echo "Disabled Successfuly"
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
             fi
         else
             echo -e "\e[33mProxy Protocol is Disabled.\e[0m"
@@ -321,6 +354,9 @@ proxy_protocol() {
                 # Tasks to be performed if input is "y"
                 sed -i 's/\(server.*check\)/\1 send-proxy-v2/g' "$config_file"
                 systemctl restart haproxy
+                echo "Enabled Successfuly"
+                read -n 1 -s -r -p "Press any key to continue"
+                echo
             fi
         fi
     fi
@@ -331,6 +367,8 @@ create_backup() {
     clear
     cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.back
     echo -e "\e[32mBackup Successfuly created\e[0m"
+    read -n 1 -s -r -p "Press any key to continue"
+    echo
 }
 restore_backup() {
     config_file="/etc/haproxy/haproxy.cfg"
@@ -339,6 +377,8 @@ restore_backup() {
     cp /etc/haproxy/haproxy.cfg.back /etc/haproxy/haproxy.cfg
     systemctl restart haproxy
     echo -e "\e[32mBackup Successfuly Restored\e[0m"
+    read -n 1 -s -r -p "Press any key to continue"
+    echo
 }
 Reset_Config() {
         clear
@@ -346,6 +386,8 @@ Reset_Config() {
         wget -O /etc/haproxy/haproxy.cfg https://raw.githubusercontent.com/Argo160/HaProxy_LoadBalancer/main/haproxy.cfg
         echo -e "\e[32mThe Setting Restored to default\e[0m"
         echo "You need to specify ports and ip addresses"
+        read -n 1 -s -r -p "Press any key to continue"
+        echo
 }
 balance_algo() {
     clear
